@@ -1,0 +1,472 @@
+/* Reset and base */
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0; padding: 0; height: 100%;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Container holding player and channels */
+    #main-content {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: row; /* desktop: player left, channels right */
+      overflow: hidden;
+      padding: 10px;
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 10px;
+    }
+
+    /* Player container */
+    #video-container {
+      flex: 0 0 80%; /* 80% width for player */
+      max-width: 80%;
+      overflow: hidden;
+      position: relative;
+      margin-top: 50px;
+    }
+
+    #channel-name {
+      font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-align: center;
+    /* Sleek gradient text */
+    background: linear-gradient(90deg, #00bfff 0%, #00ff9d 50%, #00bfff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 10px rgba(0, 191, 255, 0.3);
+    letter-spacing: 0.5px;
+    }
+
+    #channel-name.loading {
+    background: linear-gradient(90deg, 
+        #00bfff 0%, 
+        #00ff9d 25%, 
+        #00bfff 50%, 
+        #00ff9d 75%, 
+        #00bfff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    to {
+        background-position: 200% center;
+    }
+}
+
+    /* Keep a consistent 16:9 area */
+    #videoWrapper {
+      width: 100%;
+      height: max-content;
+      aspect-ratio: 16 / 9;
+      background: black;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #videoWrapper iframe,
+    #videoWrapper video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: block;
+    }
+
+    /* Hide native time display and create custom one */
+#videoWrapper {
+    position: relative;
+}
+
+    /* Add this to smooth all text transitions */
+#channel-name, .channel span, footer, #live-indicator, #qualitySelector, #unmuteBtn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-time-display {
+    position: absolute;
+    bottom: 50px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+    display: none;
+}
+/* Show custom time display when video has focus */
+video:focus + .custom-time-display,
+.video-wrapper:hover .custom-time-display {
+    display: block;
+}
+/* Add this to your CSS */
+#videoWrapper {
+    position: relative;
+}
+
+/* Hide native controls time display for live streams */
+.shaka-video::-webkit-media-controls-timeline,
+.shaka-video::-webkit-media-controls-current-time-display,
+.shaka-video::-webkit-media-controls-time-remaining-display {
+    display: none !important;
+}
+
+/* For Firefox and other browsers */
+.shaka-video::-moz-range-track {
+    display: none;
+}
+
+/* Custom controls styling */
+#custom-time-display {
+    font-family: 'Arial', sans-serif;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+#live-stream-controls {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Fullscreen styles */
+#videoWrapper:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+}
+
+#videoWrapper:fullscreen video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Enhanced Controls Styling for DASH */
+#custom-controls {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    opacity: 20;
+}
+
+#live-indicator {
+    background: linear-gradient(135deg, #ff2d2d 0%, #ff6b6b 100%);
+    color: white;
+    padding: 4px 6px;
+    border-radius: 50px;
+    font-size: 8px;
+    font-weight: 200;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 15px rgba(255, 45, 45, 0.4);
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: liveFade 5s ease-in-out infinite;
+}
+
+@keyframes liveFade {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  80% {
+    opacity: 1;
+  }
+}
+
+#live-indicator.paused {
+  animation: none;
+  opacity: 0.6;
+}
+
+#fullscreen-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    pointer-events: auto;
+    transition: all 0.2s ease;
+}
+
+#fullscreen-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.6);
+    transform: scale(1.05);
+}
+
+/* Fullscreen enhancements */
+#videoWrapper:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#videoWrapper:fullscreen video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#videoWrapper:fullscreen #custom-controls {
+    bottom: 40px;
+    right: 40px;
+    opacity: 1 !important;
+}
+
+/* Video focus styles for keyboard controls */
+video:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+
+    /* Quality selector */
+    #qualitySelector {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 8;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 1px solid #666;
+      border-radius: 6px;
+      padding: 4px;
+      font-size: 0.9rem;
+      display: none !important;
+
+    }
+
+    /* Channel list container - desktop */
+    #channel-list {
+      flex: 0 0 20%; /* 20% width for channels */
+      max-width: 20%;
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* 2 columns desktop */
+      gap: 6px; /* desktop gap between items */
+      padding: 10px;
+      background: #222;
+      border-radius: 8px;
+      overflow-y: auto; /* scroll if content too tall */
+      max-height: calc(90vh - 20px); /* avoid exceeding viewport */
+      margin-top: 2%;
+    }
+
+    /* Modern scrollbar for desktop */
+    #channel-list::-webkit-scrollbar {
+      width: 8px;
+    }
+    #channel-list::-webkit-scrollbar-track {
+      background: #111;
+      border-radius: 4px;
+    }
+    #channel-list::-webkit-scrollbar-thumb {
+      background: #00bfff;
+      border-radius: 4px;
+    }
+    #channel-list {
+      scrollbar-width: thin;
+      scrollbar-color: #00bfff #111;
+    }
+
+    /* Individual channels - logo fills container */
+    .channel {
+      width: 100%;
+      aspect-ratio: 1; /* ensures square container */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background: #333;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .channel img {
+      width: 90%;      /* fill most of square container */
+      height: 90%;
+      object-fit: contain; /* keep logo ratio */
+      border-radius: 6px;
+      filter: brightness(0.85);
+      transition: filter 0.3s ease;
+    }
+
+    .channel span {
+      display: block;
+      font-size: 11px;
+      margin-top: 2px;
+      color: #ddd;
+      text-align: center;
+    }
+
+    .channel:hover img { filter: brightness(1); }
+    .channel.active { border-color: #00bfff; transform: scale(1.06); background: #005f9e; }
+    .channel.active img { filter: brightness(1); }
+
+    .channel.active span {
+    color: #00ff9d;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+}
+
+.channel span {
+    display: block;
+    font-size: 11px;
+    margin-top: 2px;
+    color: #b0b0b0; /* Softer gray */
+    text-align: center;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.channel:hover span {
+    color: #00bfff;
+}
+
+    /* Footer */
+    footer {
+      flex-shrink: 0;
+      background: #111;
+      color: #666;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 12px 15px;
+      border-top: 1px solid #222;
+      user-select: none;
+    }
+
+    /* Loader */
+    .loader {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 54px; height: 54px;
+      margin-left: -27px; margin-top: -27px;
+      border: 6px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+      z-index: 5;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* #unmuteBtn {
+      position: absolute;
+      left: 12px; bottom: 12px;
+      z-index: 6;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 1px solid #666;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: none;
+      cursor: pointer;
+    } */
+
+    /* Responsive: tablets and mobiles */
+    @media (max-width: 900px) {
+      #main-content {
+        flex-direction: column; /* stack vertically */
+      }
+
+      /* Player full width */
+      #video-container {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 6px;
+        margin-block-start: 0%;
+      }
+      
+
+      #videoWrapper {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 16 / 9; /* maintain ratio */
+      }
+
+   /* Mobile - Vertical scrolling grid */
+@media (max-width: 900px) {
+  #channel-list {
+    flex: 0 0 auto;
+    width: 75%;
+    max-width: 75%;
+    margin: 0 auto;
+    justify-items: center;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 6px;
+    padding: 10px;
+    overflow-x: hidden; /* No horizontal scroll */
+    overflow-y: auto; /* Scroll vertically */
+    max-height: 335px; /* Limit height */
+    scroll-snap-type: none; /* Remove snap scrolling */
+  }
+
+  #channel-list .channel {
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: none; /* Remove height restriction */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  #channel-list .channel img {
+    width: 80%;
+    height: 80%;
+  }
+
+  /* When one channel is active */
+    #channel-list.has-active .channel {
+  opacity: 0.35; /* dim others */
+}
+
+/* Active channel */
+    #channel-list .channel.active {
+  opacity: 1;
+  transform: scale(1.05); /* subtle focus */
+  z-index: 2;
+}
+
+
+  .channel span {
+    font-size: 10px; /* Slightly smaller text */
+    margin-top: 4px;
+  }
+}
+      #channel-name {
+        font-size: 1.5rem;
+      }
+    }
