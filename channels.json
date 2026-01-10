@@ -155,13 +155,6 @@
     "isLive": true
   },
   {
-    "name": "Kapamilya Online Live",
-    "logo": "https://upload.wikimedia.org/wikipedia/en/f/f2/Kapamilya_Channel_Logo_2020.svg",
-    "type": "youtube",
-    "link": " https://www.youtube.com/watch?v=RqZ4y0XBKUg",
-    "isLive": true
-  },
-  {
     "name": "Kapamilya Movie Channel",
     "logo": "https://i.pinimg.com/736x/bb/5a/c7/bb5ac7de7e3e772e0e098637fafd121a.jpg",
     "type": "mpd",
@@ -343,19 +336,10 @@
     },
     "isLive": true
   },
-  {
-    "name": "Warner TV",
-    "logo": "https://ownassetsmysky.blob.core.windows.net/assetsmysky/production/plans-and-bundles/1599468004_warner-tv.gif",
-    "type": "mpd",
-    "link": "https://qp-pldt-live-grp-11-prod.akamaized.net/out/u/dr_warnertvhd.mpd",
-    "drmtype": "clearkey",
-    "clearkey": {
-      "4503cf86bca3494ab95a77ed913619a0": "afc9c8f627fb3fb255dee8e3b0fe1d71"
-    },
-    "isLive": true
   }
 
 ]
+
 
 
 
