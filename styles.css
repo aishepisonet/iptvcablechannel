@@ -167,7 +167,7 @@ video:focus + .custom-time-display,
     transition: all 0.3s ease;
     opacity: 20;
 }
-
+/**
 #live-indicator {
     background: linear-gradient(135deg, #ff2d2d 0%, #ff6b6b 100%);
     color: white;
@@ -182,7 +182,7 @@ video:focus + .custom-time-display,
     border: 1px solid rgba(255, 255, 255, 0.2);
     animation: liveFade 5s ease-in-out infinite;
 }
-
+*/
 @keyframes liveFade {
   0% {
     opacity: 1;
@@ -474,3 +474,4 @@ video:focus {
         font-size: 1.5rem;
       }
     }
+
