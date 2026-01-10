@@ -519,7 +519,7 @@ const PlayerManager = {
     setupVideoElement() {
         const video = document.createElement("video");
         video.setAttribute("playsinline", "true");
-        video.controls = false;
+        video.controls = true;
         video.autoplay = true;
         video.muted = false;
         video.preload = "auto";
@@ -1396,6 +1396,7 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
 
 
 
