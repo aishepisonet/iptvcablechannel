@@ -284,6 +284,27 @@ async function loadChannelsFromGitHub() {
 }
 */
 
+async function loadChannels() {
+  try {
+    // fetch JSON from the same folder
+    const response = await fetch('./channels.json'); // <-- note the ./
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const channels = await response.json();
+
+    console.log('Loaded channels:', channels);
+
+    // Use the channels array (for example with your ChannelManager)
+    window.channels = channels; // optional global
+    ChannelManager.init();      // now your manager has the channels
+  } catch (err) {
+    console.error('Failed to load channels.json', err);
+  }
+}
+
 
 async function loadChannelsFromPublic() {
   try {
@@ -1357,7 +1378,8 @@ window.addEventListener('load', function() {
         initApp();
     }
 });
-
+// Run on page load
+document.addEventListener('DOMContentLoaded', loadChannels);
 document.addEventListener('DOMContentLoaded', () => {
   loadChannelsFromPublic();
 });
@@ -1397,5 +1419,6 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
 
 
