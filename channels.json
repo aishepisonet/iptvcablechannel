@@ -282,17 +282,6 @@
     "isLive": true
   },
   {
-    "name": "TFC",
-    "logo": "https://i.imgur.com/gmM3ncL.png",
-    "type": "mpd",
-    "link": "https://cdn-ue1-prod.tsv2.amagi.tv/...045bc3c-9492-42d4-974e-a3b217776e57/index.mpd",
-    "drmtype": "clearkey",
-    "clearkey": {
-      "9568cc84e1d944f38eac304517eab6fd": "f12142af8f39b3bab79d3679d3665ebe"
-    },
-    "isLive": true
-  },
-  {
     "name": "TMC",
     "logo": "https://i.imgur.com/550RYpJ.png",
     "type": "mpd",
@@ -348,6 +337,7 @@
     "isLive": true
   }
 ]
+
 
 
 
