@@ -1251,10 +1251,10 @@ const ControlsManager = {
             pointer-events: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         `;
-        */
+        
         
         liveDiv.textContent = '● LIVE';
-        
+       */ 
         DOM.videoWrapper.appendChild(liveDiv);
         
         let lastUpdateTime = Date.now();
@@ -1544,5 +1544,6 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
 
 
