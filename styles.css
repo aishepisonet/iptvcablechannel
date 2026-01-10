@@ -141,18 +141,18 @@ video:focus + .custom-time-display,
     transition: opacity 0.3s ease;
 }
 
-/* Fullscreen styles */
+ Fullscreen styles 
 #videoWrapper:fullscreen {
     width: 100vw;
     height: 100vh;
     background: #000;
-}
+} */
 
-#videoWrapper:fullscreen video {
+ #videoWrapper:fullscreen video {
     width: 100%;
     height: 100%;
     object-fit: contain;
-}
+} 
 
 /* Enhanced Controls Styling for DASH */
 #custom-controls {
@@ -204,10 +204,10 @@ video:focus + .custom-time-display,
     background: rgba(0, 0, 0, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -215,6 +215,9 @@ video:focus + .custom-time-display,
     backdrop-filter: blur(10px);
     pointer-events: auto;
     transition: all 0.2s ease;
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
 }
 
 #fullscreen-btn:hover {
@@ -367,7 +370,7 @@ video:focus {
       user-select: none;
     }
 
-    /* Loader */
+    /* Loader 
     .loader {
       position: absolute;
       left: 50%; top: 50%;
@@ -379,7 +382,8 @@ video:focus {
       animation: spin 1s linear infinite;
       display: none;
       z-index: 5;
-    }
+    } */
+   
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* #unmuteBtn {
