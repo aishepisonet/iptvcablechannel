@@ -1,8 +1,20 @@
 /**
  * IPTV Player Application
- * Cleaned and optimized version
+ * Fixed and optimized version
  * Supports: YouTube, HLS (m3u8), DASH (mpd) with DRM
  */
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+const CONSTANTS = {
+    SECONDS_IN_DAY: 86400,
+    UNDEFINED_STRING: 'undefined',
+    PLACEHOLDER_SVG: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5OTyBMT0dPPC90ZXh0Pjwvc3ZnPg==',
+    MAX_TOTAL_RETRIES: 10 // Global retry limit across all operations
+};
+
 // =============================================================================
 // STATE MANAGEMENT
 // =============================================================================
@@ -27,6 +39,9 @@ const AppState = {
     
     // Event cleanup functions
     eventCleanups: [],
+    
+    // Global retry counter
+    totalRetries: 0,
     
     /**
      * Reset all player state
@@ -75,7 +90,7 @@ const AppState = {
         }
         
         // Remove iframes
-        const oldIframe = DOM.videoWrapper.querySelector('iframe');
+        const oldIframe = DOM.videoWrapper?.querySelector('iframe');
         if (oldIframe) oldIframe.remove();
         
         // Clear all registered event listeners
@@ -98,6 +113,28 @@ const AppState = {
      */
     registerCleanup(cleanupFn) {
         this.eventCleanups.push(cleanupFn);
+    },
+    
+    /**
+     * Check if retry limit reached
+     */
+    canRetry() {
+        return this.totalRetries < CONSTANTS.MAX_TOTAL_RETRIES;
+    },
+    
+    /**
+     * Increment retry counter
+     */
+    incrementRetry() {
+        this.totalRetries++;
+        Utils.log(`Retry count: ${this.totalRetries}/${CONSTANTS.MAX_TOTAL_RETRIES}`);
+    },
+    
+    /**
+     * Reset retry counter
+     */
+    resetRetries() {
+        this.totalRetries = 0;
     }
 };
 
@@ -120,6 +157,14 @@ const DOM = {
         this.loader = document.getElementById("loader");
         this.unmuteBtn = document.getElementById("unmuteBtn");
         this.qualitySelector = document.getElementById("qualitySelector");
+        
+        // Validate all required DOM elements exist
+        const required = ['channelList', 'channelName', 'videoWrapper', 'loader'];
+        const missing = required.filter(key => !this[key]);
+        
+        if (missing.length > 0) {
+            throw new Error(`Missing required DOM elements: ${missing.join(', ')}`);
+        }
     }
 };
 
@@ -130,9 +175,11 @@ const DOM = {
 const Config = {
     MAX_FALLBACK_ATTEMPTS: 2,
     NETWORK_SPEED_TEST_RUNS: 2,
+    NETWORK_SPEED_TEST_SIZE: 1000000, // 1MB for mobile-friendly testing
     AUTOPLAY_DELAY: 500,
     SCROLL_DEBOUNCE_DELAY: 1000,
     CONTROLS_HIDE_DELAY: 3000,
+    LIVE_UPDATE_INTERVAL: 1000,
     
     HLS: {
         maxBufferLength: 30,
@@ -165,6 +212,8 @@ const Utils = {
      * Show or hide loader
      */
     showLoader(show) {
+        if (!DOM.loader || !DOM.channelName) return;
+        
         DOM.loader.style.display = show ? 'block' : 'none';
         
         if (show) {
@@ -185,7 +234,7 @@ const Utils = {
      * Format time display
      */
     formatTime(seconds) {
-        if (!isFinite(seconds) || seconds > 86400) {
+        if (!isFinite(seconds) || seconds > CONSTANTS.SECONDS_IN_DAY) {
             return 'LIVE';
         }
         
@@ -203,7 +252,7 @@ const Utils = {
      * Format time display with duration
      */
     formatTimeDisplay(currentTime, duration) {
-        if (!isFinite(duration) || duration > 86400) {
+        if (!isFinite(duration) || duration > CONSTANTS.SECONDS_IN_DAY) {
             return 'LIVE';
         }
         return `${this.formatTime(currentTime)} / ${this.formatTime(duration)}`;
@@ -238,84 +287,66 @@ const Utils = {
     getNetworkStateText(state) {
         const states = ['NETWORK_EMPTY', 'NETWORK_IDLE', 'NETWORK_LOADING', 'NETWORK_NO_SOURCE'];
         return states[state] || 'UNKNOWN';
+    },
+    
+    /**
+     * Sanitize text for safe insertion
+     */
+    sanitizeText(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 };
 
-
 // =============================================================================
-// FETCH MANAGEMENT GitHub JSON fetcher BEFORE ChannelManager.init
+// CHANNELS DATA & LOADING
 // =============================================================================
 
 let channels = [];
 
-/**const CHANNELS_URL =
-  'https://raw.githubusercontent.com/aishepisonet/freeCCTV/refs/heads/main/public/channels.json';
-
-async function loadChannelsFromGitHub() {
-  try {
-    Utils.log('🌐 Fetching channels.json from GitHub...');
-
-    const res = await fetch(CHANNELS_URL, { cache: 'no-store' });
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-
-    channels = await res.json();
-
-    if (!Array.isArray(channels)) {
-      throw new Error('channels.json is not an array');
-    }
-
-    Utils.log(`✅ Loaded ${channels.length} channels`);
-
-    ChannelManager.init(); // 🔥 NOW init works
-  } catch (err) {
-    console.error('❌ Channel load failed:', err);
-
-    DOM.channelName.textContent = 'Failed to load channels';
-    DOM.channelList.innerHTML = `
-      <div style="color:#ff6b6b; padding:20px; text-align:center;">
-        Failed to load channels.json<br>
-        ${err.message}
-      </div>
-    `;
-  }
-}
-*/
-
+/**
+ * Load channels from public directory
+ */
 async function loadChannelsFromPublic() {
-  try {
-    Utils.log('📡 Loading channels from /channels.json');
+    try {
+        Utils.log('📡 Loading channels from /channels.json');
 
-    const res = await fetch('./channels.json', { cache: 'no-store' });
+        const res = await fetch('./channels.json', { cache: 'no-store' });
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error('channels.json is not an array');
+        }
+
+        channels = data;
+
+        Utils.log(`✅ Loaded ${channels.length} channels`);
+
+        // NOW initialize channels after data is loaded
+        ChannelManager.init();
+        
+    } catch (err) {
+        console.error('❌ Failed to load channels.json', err);
+
+        if (DOM.channelName) {
+            DOM.channelName.textContent = 'Failed to load channels';
+        }
+        
+        if (DOM.channelList) {
+            DOM.channelList.innerHTML = `
+                <div style="color:#ff6b6b; text-align:center; padding:20px;">
+                    Failed to load channels.json<br>
+                    ${Utils.sanitizeText(err.message)}
+                </div>
+            `;
+        }
     }
-
-    const data = await res.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error('channels.json is not an array');
-    }
-
-    channels = data; // 🔥 THIS feeds ChannelManager
-
-    Utils.log(`✅ Loaded ${channels.length} channels`);
-
-    ChannelManager.init(); // 🚀 NOW it works
-  } catch (err) {
-    console.error('❌ Failed to load channels.json', err);
-
-    DOM.channelName.textContent = 'Failed to load channels';
-    DOM.channelList.innerHTML = `
-      <div style="color:#ff6b6b; text-align:center; padding:20px;">
-        Failed to load channels.json<br>
-        ${err.message}
-      </div>
-    `;
-  }
 }
 
 // =============================================================================
@@ -360,7 +391,7 @@ const ChannelManager = {
             DOM.channelName.textContent = "Failed to load channels";
             
             DOM.channelList.innerHTML = `<div style="color: #ff6b6b; text-align: center; padding: 20px;">
-                Error loading channels: ${err.message}
+                Error loading channels: ${Utils.sanitizeText(err.message)}
             </div>`;
         }
     },
@@ -379,7 +410,7 @@ const ChannelManager = {
                 name: channel.name || `Channel ${index + 1}`,
                 type: channel.type || 'm3u8',
                 link: channel.link || '',
-                logo: channel.logo && channel.logo !== 'undefined' ? channel.logo : '',
+                logo: channel.logo && channel.logo !== CONSTANTS.UNDEFINED_STRING ? channel.logo : '',
                 ...channel
             };
             
@@ -392,24 +423,37 @@ const ChannelManager = {
     },
     
     /**
-     * Build channel list UI
+     * Build channel list UI - FIXED XSS VULNERABILITY
      */
     buildChannelList(channels) {
         DOM.channelList.innerHTML = "";
-        
-        const placeholderSvg = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzMzMyIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5OTyBMT0dPPC90ZXh0Pjwvc3ZnPg==';
         
         channels.forEach((channel, index) => {
             const div = document.createElement("div");
             div.className = "channel";
             div.title = channel.name || 'Unnamed Channel';
             
-            const logoUrl = channel.logo || placeholderSvg;
-            div.innerHTML = `<img src="${logoUrl}" alt="${channel.name}" onerror="this.src='${placeholderSvg}'" loading="lazy">`;
+            // SECURITY FIX: Use createElement instead of innerHTML
+            const img = document.createElement('img');
+            img.src = channel.logo || CONSTANTS.PLACEHOLDER_SVG;
+            img.alt = channel.name || 'Channel logo';
+            img.loading = 'lazy';
+            
+            // Error handler for broken images
+            img.onerror = function() {
+                this.src = CONSTANTS.PLACEHOLDER_SVG;
+            };
+            
+            div.appendChild(img);
             
             div.addEventListener("click", () => {
                 document.querySelectorAll(".channel").forEach(el => el.classList.remove("active"));
                 div.classList.add("active");
+                
+                // Reset retries for new channel selection
+                AppState.resetRetries();
+                this.fallbackAttempts = 0;
+                
                 this.loadChannel(channel);
             });
             
@@ -470,16 +514,25 @@ const ChannelManager = {
     },
     
     /**
-     * Handle fallback when loading fails
+     * Handle fallback when loading fails - FIXED RETRY LIMITS
      */
     async handleLoadErrorFallback(channel, error) {
+        // Check global retry limit first
+        if (!AppState.canRetry()) {
+            console.error('Global retry limit reached');
+            DOM.channelName.textContent = `${channel.name} - Maximum retries exceeded`;
+            return;
+        }
+        
         if (this.fallbackAttempts >= Config.MAX_FALLBACK_ATTEMPTS) {
-            console.error('Maximum fallback attempts reached');
+            console.error('Channel-specific fallback attempts reached');
             DOM.channelName.textContent = `${channel.name} - Unable to load`;
             return;
         }
         
         this.fallbackAttempts++;
+        AppState.incrementRetry();
+        
         Utils.log(`Attempting fallback ${this.fallbackAttempts} for ${channel.name}`);
         
         if (channel.link && channel.link.includes('.mpd')) {
@@ -497,8 +550,9 @@ const ChannelManager = {
                 
                 // Final fallback to HLS
                 const hlsLink = channel.link.replace('.mpd', '.m3u8');
-                if (hlsLink !== channel.link) {
+                if (hlsLink !== channel.link && AppState.canRetry()) {
                     Utils.log('🔄 Trying HLS fallback...');
+                    AppState.incrementRetry();
                     await PlayerManager.loadHls(hlsLink);
                 } else {
                     DOM.channelName.textContent = `${channel.name} - Failed to load`;
@@ -514,7 +568,7 @@ const ChannelManager = {
 
 const PlayerManager = {
     /**
-     * Setup video element with proper event handlers
+     * Setup video element with proper event handlers - FIXED CLEANUP
      */
     setupVideoElement() {
         const video = document.createElement("video");
@@ -527,30 +581,30 @@ const PlayerManager = {
         video.style.height = "100%";
         video.className = "shaka-video";
         
-        // Event listeners for monitoring
-        video.addEventListener('loadstart', () => {
+        // Event handlers
+        const loadStartHandler = () => {
             Utils.log('🚀 Video load started');
-        });
+        };
         
-        video.addEventListener('progress', () => {
+        const progressHandler = () => {
             if (video.buffered.length > 0) {
                 const bufferedEnd = video.buffered.end(0);
                 const currentTime = video.currentTime;
                 
-                if (video.duration > 86400) {
+                if (video.duration > CONSTANTS.SECONDS_IN_DAY) {
                     const bufferAhead = bufferedEnd - currentTime;
                     Utils.log(`📥 Live buffer: ${bufferAhead.toFixed(1)}s ahead`);
                 } else {
                     Utils.log(`📥 Buffered: ${Utils.formatTime(bufferedEnd)}`);
                 }
             }
-        });
+        };
         
-        video.addEventListener('canplay', () => {
+        const canPlayHandler = () => {
             Utils.log('✅ Video can play');
-        });
+        };
         
-        video.addEventListener('error', (e) => {
+        const errorHandler = (e) => {
             console.error('🎬 Video error:', {
                 readyState: Utils.getReadyStateText(video.readyState),
                 networkState: Utils.getNetworkStateText(video.networkState),
@@ -559,6 +613,28 @@ const PlayerManager = {
             });
             
             this.handleVideoError(video);
+        };
+        
+        // Attach event listeners
+        video.addEventListener('loadstart', loadStartHandler);
+        video.addEventListener('progress', progressHandler);
+        video.addEventListener('canplay', canPlayHandler);
+        video.addEventListener('error', errorHandler);
+        
+        // FIXED: Register cleanup for video element and its listeners
+        AppState.registerCleanup(() => {
+            video.removeEventListener('loadstart', loadStartHandler);
+            video.removeEventListener('progress', progressHandler);
+            video.removeEventListener('canplay', canPlayHandler);
+            video.removeEventListener('error', errorHandler);
+            
+            try {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            } catch (e) {
+                console.error('Error cleaning up video:', e);
+            }
         });
         
         return video;
@@ -797,7 +873,7 @@ const PlayerManager = {
 
 const DRMManager = {
     /**
-     * Detect DRM support
+     * Detect DRM support - FIXED PROMISE HANDLING
      */
     async detectSupport() {
         return new Promise((resolve) => {
@@ -858,7 +934,8 @@ const DRMManager = {
                             support.clearkey = false;
                             Utils.log('❌ ClearKey not supported');
                         })
-                        .finally(() => resolve(support));
+                        .finally(() => resolve(support))
+                        .catch(() => resolve(support)); // FIXED: Ensure resolve always happens
                 });
         });
     },
@@ -1027,9 +1104,10 @@ const ControlsManager = {
      */
     setupEventListeners() {
         // Fullscreen button
-        this.fullscreenBtn.addEventListener('click', () => {
+        const fullscreenClickHandler = () => {
             this.toggleFullscreen();
-        });
+        };
+        this.fullscreenBtn.addEventListener('click', fullscreenClickHandler);
         
         // Fullscreen change events
         const handleFullscreenChange = () => this.handleFullscreenChange();
@@ -1042,6 +1120,7 @@ const ControlsManager = {
         
         // Register cleanup
         AppState.registerCleanup(() => {
+            this.fullscreenBtn.removeEventListener('click', fullscreenClickHandler);
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
             DOM.videoWrapper.removeEventListener('mousemove', handleMouseMove);
@@ -1152,12 +1231,12 @@ const ControlsManager = {
     },
     
     /**
-     * Setup live stream display
+     * Setup live stream display - OPTIMIZED UPDATE LOGIC
      */
     setupLiveDisplay(video, player) {
         const liveDiv = document.createElement('div');
         liveDiv.id = 'live-time-display';
-   /**      liveDiv.style.cssText = `
+        liveDiv.style.cssText = `
             position: absolute;
             bottom: 60px;
             right: 15px;
@@ -1171,12 +1250,13 @@ const ControlsManager = {
             pointer-events: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         `;
-     */   
+        
         liveDiv.textContent = '● LIVE';
         
         DOM.videoWrapper.appendChild(liveDiv);
         
         let lastUpdateTime = Date.now();
+        let lastDisplayedText = '● LIVE';
         
         const updateDisplay = () => {
             if (!player || !video) return;
@@ -1184,13 +1264,21 @@ const ControlsManager = {
             try {
                 const now = Date.now();
                 const timeSinceUpdate = now - lastUpdateTime;
+                let newText, newBackground;
                 
                 if (timeSinceUpdate > 2000) {
-                    liveDiv.textContent = `LIVE -${Math.round(timeSinceUpdate / 1000)}s`;
-                    liveDiv.style.background = 'rgba(255, 165, 0, 0.9)';
+                    newText = `LIVE -${Math.round(timeSinceUpdate / 1000)}s`;
+                    newBackground = 'rgba(255, 165, 0, 0.9)';
                 } else {
-                    liveDiv.textContent = '● LIVE';
-                    liveDiv.style.background = 'rgba(255, 50, 50, 0.9)';
+                    newText = '● LIVE';
+                    newBackground = 'rgba(255, 50, 50, 0.9)';
+                }
+                
+                // OPTIMIZED: Only update DOM if text actually changed
+                if (newText !== lastDisplayedText) {
+                    liveDiv.textContent = newText;
+                    liveDiv.style.background = newBackground;
+                    lastDisplayedText = newText;
                 }
                 
                 lastUpdateTime = now;
@@ -1199,12 +1287,17 @@ const ControlsManager = {
             }
         };
         
-        const interval = setInterval(updateDisplay, 1000);
-        video.addEventListener('timeupdate', () => { lastUpdateTime = Date.now(); });
+        const interval = setInterval(updateDisplay, Config.LIVE_UPDATE_INTERVAL);
+        
+        const timeUpdateHandler = () => { 
+            lastUpdateTime = Date.now(); 
+        };
+        video.addEventListener('timeupdate', timeUpdateHandler);
         
         // Cleanup
         const cleanup = () => {
             clearInterval(interval);
+            video.removeEventListener('timeupdate', timeUpdateHandler);
             if (liveDiv.parentNode) liveDiv.remove();
         };
         
@@ -1223,9 +1316,9 @@ const ControlsManager = {
 
 const NetworkDiagnostics = {
     /**
-     * Measure network speed once
+     * Measure network speed once - OPTIMIZED FILE SIZE
      */
-    async measureSpeedOnce(testFile = 'https://httpbin.org/stream-bytes/5000000', timeoutMs = 7000) {
+    async measureSpeedOnce(testFile = `https://httpbin.org/stream-bytes/${Config.NETWORK_SPEED_TEST_SIZE}`, timeoutMs = 7000) {
         const controller = new AbortController();
         const signal = controller.signal;
         
@@ -1263,7 +1356,7 @@ const NetworkDiagnostics = {
     /**
      * Detect network speed with multiple runs
      */
-    async detectNetworkSpeed(runs = 2) {
+    async detectNetworkSpeed(runs = Config.NETWORK_SPEED_TEST_RUNS) {
         console.group('📊 Network Speed Test');
         let totalSpeed = 0;
         
@@ -1316,36 +1409,86 @@ const NetworkDiagnostics = {
 };
 
 // =============================================================================
-// INITIALIZATION
+// GLOBAL ERROR HANDLERS - NEW
 // =============================================================================
 
 /**
- * Initialize the application
+ * Setup global error handlers
+ */
+function setupGlobalErrorHandlers() {
+    window.addEventListener('error', (e) => {
+        console.error('🚨 Uncaught error:', e.error);
+        Utils.showLoader(false);
+        
+        // Don't break the app, just log
+        if (DOM.channelName) {
+            const currentText = DOM.channelName.textContent;
+            if (!currentText.includes('Error')) {
+                DOM.channelName.textContent = `${currentText} - Error occurred`;
+            }
+        }
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+        console.error('🚨 Unhandled promise rejection:', e.reason);
+        Utils.showLoader(false);
+        
+        if (DOM.channelName) {
+            const currentText = DOM.channelName.textContent;
+            if (!currentText.includes('Error')) {
+                DOM.channelName.textContent = `${currentText} - Promise error`;
+            }
+        }
+    });
+    
+    Utils.log('✅ Global error handlers installed');
+}
+
+// =============================================================================
+// INITIALIZATION - FIXED SEQUENCE
+// =============================================================================
+
+/**
+ * Initialize the application DOM and controls only
  */
 function initApp() {
-    Utils.log('🚀 Initializing IPTV Player...');
-    
-    // Initialize DOM references
-    DOM.init();
-    
-    // Check library availability
-    Utils.log('HLS.js available:', typeof Hls !== 'undefined');
-    Utils.log('Shaka Player available:', typeof shaka !== 'undefined');
-    
-    // Initialize controls
-    ControlsManager.init();
-    
-    // Initialize channels
-    ChannelManager.init();
-    
-    Utils.log('✅ Initialization complete');
+    try {
+        Utils.log('🚀 Initializing IPTV Player...');
+        
+        // Initialize DOM references
+        DOM.init();
+        
+        // Check library availability
+        Utils.log('HLS.js available:', typeof Hls !== 'undefined');
+        Utils.log('Shaka Player available:', typeof shaka !== 'undefined');
+        
+        // Initialize controls
+        ControlsManager.init();
+        
+        // Setup global error handlers
+        setupGlobalErrorHandlers();
+        
+        Utils.log('✅ DOM and controls initialized, waiting for channels...');
+        
+        // NOTE: ChannelManager.init() is called AFTER channels load
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+        if (DOM.channelName) {
+            DOM.channelName.textContent = 'Initialization failed';
+        }
+    }
 }
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+        loadChannelsFromPublic(); // Load channels after DOM init
+    });
 } else {
     initApp();
+    loadChannelsFromPublic();
 }
 
 // Fallback initialization on full page load
@@ -1354,11 +1497,8 @@ window.addEventListener('load', function() {
         Utils.log('📄 Fallback initialization on window.load');
         window.appInitialized = true;
         initApp();
+        loadChannelsFromPublic();
     }
-});
-// Run on page load
-document.addEventListener('DOMContentLoaded', () => {
-  loadChannelsFromPublic();
 });
 
 // =============================================================================
@@ -1390,14 +1530,15 @@ window.IPTVPlayer = {
             hasShaka: !!AppState.currentShaka,
             hasVideo: !!AppState.currentVideo,
             drmSupport: AppState.drmSupport,
-            networkSpeed: AppState.networkSpeed
+            networkSpeed: AppState.networkSpeed,
+            totalRetries: AppState.totalRetries
         };
+    },
+    
+    resetRetries() {
+        AppState.resetRetries();
+        Utils.log('✅ Retry counter reset');
     }
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
-
-
-
-
-
