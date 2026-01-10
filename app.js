@@ -1236,7 +1236,8 @@ const ControlsManager = {
     setupLiveDisplay(video, player) {
         const liveDiv = document.createElement('div');
         liveDiv.id = 'live-time-display';
-        liveDiv.style.cssText = `
+        liveDiv.style.cssText =
+            /**`
             position: absolute;
             bottom: 60px;
             right: 15px;
@@ -1250,6 +1251,7 @@ const ControlsManager = {
             pointer-events: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         `;
+        */
         
         liveDiv.textContent = '● LIVE';
         
@@ -1542,3 +1544,4 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
