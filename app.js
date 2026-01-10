@@ -287,7 +287,7 @@ async function loadChannelsFromGitHub() {
 
 async function loadChannelsFromPublic() {
   try {
-    Utils.log('📡 Loading channels from /public/channels.json');
+    Utils.log('📡 Loading channels from /channels.json');
 
     const res = await fetch('./channels.json', { cache: 'no-store' });
 
@@ -1397,3 +1397,4 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
