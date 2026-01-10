@@ -809,6 +809,10 @@ const PlayerManager = {
                 DOM.unmuteBtn.style.display = 'block';
             }
             
+            // Setup live stream controls if applicable
+            if (player.isLive()) {
+                ControlsManager.setupLiveDisplay(video, player);
+            }
             
         } catch (error) {
             console.error('💥 Smart DRM load failed:', error);
@@ -1226,6 +1230,28 @@ const ControlsManager = {
     /**
      * Setup live stream display - OPTIMIZED UPDATE LOGIC
      */
+    setupLiveDisplay(video, player) {
+        const liveDiv = document.createElement('div');
+        liveDiv.id = 'live-time-display';
+      /**  liveDiv.style.cssText = `
+            position: absolute;
+            bottom: 60px;
+            right: 15px;
+            background: rgba(255, 50, 50, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        `;
+        */
+        
+        liveDiv.textContent = '● LIVE';
+        
+        DOM.videoWrapper.appendChild(liveDiv);
         
         let lastUpdateTime = Date.now();
         let lastDisplayedText = '● LIVE';
@@ -1514,4 +1540,3 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
-
