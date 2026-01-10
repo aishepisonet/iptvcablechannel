@@ -1068,7 +1068,6 @@ const QualityManager = {
 
 const ControlsManager = {
     controls: null,
-    liveIndicator: null,
     fullscreenBtn: null,
     
     /**
@@ -1080,7 +1079,6 @@ const ControlsManager = {
         }
         
         this.controls = document.getElementById('custom-controls');
-        this.liveIndicator = document.getElementById('live-indicator');
         this.fullscreenBtn = document.getElementById('fullscreen-btn');
         
         this.setupEventListeners();
@@ -1092,7 +1090,6 @@ const ControlsManager = {
     createControls() {
         const controlsHTML = `
             <div id="custom-controls" style="display: none;">
-                <div id="live-indicator">● LIVE</div>
                 <button id="fullscreen-btn" title="Toggle Fullscreen (F)">⛶</button>
             </div>
         `;
