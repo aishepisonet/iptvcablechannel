@@ -1068,6 +1068,7 @@ const QualityManager = {
 
 const ControlsManager = {
     controls: null,
+    liveIndicator: null,
     fullscreenBtn: null,
     
     /**
@@ -1079,6 +1080,7 @@ const ControlsManager = {
         }
         
         this.controls = document.getElementById('custom-controls');
+        this.liveIndicator = document.getElementById('live-indicator');
         this.fullscreenBtn = document.getElementById('fullscreen-btn');
         
         this.setupEventListeners();
@@ -1090,6 +1092,7 @@ const ControlsManager = {
     createControls() {
         const controlsHTML = `
             <div id="custom-controls" style="display: none;">
+                <div id="live-indicator">● LIVE</div>
                 <button id="fullscreen-btn" title="Toggle Fullscreen (F)">⛶</button>
             </div>
         `;
@@ -1233,7 +1236,7 @@ const ControlsManager = {
     setupLiveDisplay(video, player) {
         const liveDiv = document.createElement('div');
         liveDiv.id = 'live-time-display';
-      /**  liveDiv.style.cssText = `
+        liveDiv.style.cssText = `
             position: absolute;
             bottom: 60px;
             right: 15px;
@@ -1247,7 +1250,6 @@ const ControlsManager = {
             pointer-events: none;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         `;
-        */
         
         liveDiv.textContent = '● LIVE';
         
