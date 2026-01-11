@@ -1092,8 +1092,8 @@ const ControlsManager = {
     createControls() {
         const controlsHTML = `
             <div id="custom-controls" style="display: none;">
-                <div id="live-indicator">● LIVE</div>
-                <button id="fullscreen-btn" title="Toggle Fullscreen (F)">⛶</button>
+                <div id="live-indicator"></div>
+                <button id="fullscreen-btn" title="Toggle Fullscreen (F)"></button>
             </div>
         `;
         DOM.videoWrapper.insertAdjacentHTML('beforeend', controlsHTML);
@@ -1164,7 +1164,7 @@ const ControlsManager = {
      */
     show() {
         if (this.controls) {
-            this.controls.style.display = 'flex';
+            this.controls.style.display = 'none';
             this.controls.style.opacity = '1';
         }
     },
