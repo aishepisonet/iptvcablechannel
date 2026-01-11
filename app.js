@@ -575,7 +575,7 @@ const PlayerManager = {
         video.setAttribute("playsinline", "true");
         video.controls = true;
         video.autoplay = true;
-        video.muted = false;
+        video.muted = true;
         video.preload = "auto";
         video.style.width = "100%";
         video.style.height = "100%";
@@ -1544,6 +1544,7 @@ window.IPTVPlayer = {
 };
 
 Utils.log('💡 Debug API available at window.IPTVPlayer');
+
 
 
 
