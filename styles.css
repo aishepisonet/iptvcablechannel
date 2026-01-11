@@ -92,7 +92,7 @@
 }
 
     /* Add this to smooth all text transitions */
-#channel-name, .channel span, footer, #live-indicator, #qualitySelector, #unmuteBtn {
+#channel-name, .channel span, footer, #qualitySelector, #unmuteBtn {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -182,7 +182,7 @@ video:focus + .custom-time-display,
     border: 1px solid rgba(255, 255, 255, 0.2);
     animation: liveFade 5s ease-in-out infinite;
 }
-*/
+
 @keyframes liveFade {
   0% {
     opacity: 1;
@@ -194,6 +194,7 @@ video:focus + .custom-time-display,
     opacity: 1;
   }
 }
+  
 
 #live-indicator.paused {
   animation: none;
@@ -226,7 +227,7 @@ video:focus + .custom-time-display,
     transform: scale(1.05);
 }
 
-/* Fullscreen enhancements */
+Fullscreen enhancements 
 #videoWrapper:fullscreen {
     width: 100vw;
     height: 100vh;
@@ -247,6 +248,7 @@ video:focus + .custom-time-display,
     right: 40px;
     opacity: 1 !important;
 }
+*/
 
 /* Video focus styles for keyboard controls */
 video:focus {
@@ -382,7 +384,7 @@ video:focus {
       animation: spin 1s linear infinite;
       display: none;
       z-index: 5;
-    } */
+    } 
    
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -474,4 +476,3 @@ video:focus {
         font-size: 1.5rem;
       }
     }
-
